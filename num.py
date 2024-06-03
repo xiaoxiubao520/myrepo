@@ -1,8 +1,10 @@
 import pandas as pd
-from pyecharts.charts import Line,Grid
+from pyecharts.charts import Line, Grid
 from pyecharts import options as opts
 from pyecharts.globals import ThemeType
-def summary_num():
+
+
+def summary_num(km2, f):
     dt = {}
     for i in set(data["事件类型"]):
         da = data[data["事件类型"] == i]
@@ -38,7 +40,7 @@ def summary_num():
     f.write(",自动驾驶里程,%d\n\n" % km2)
 
 
-def mb_km():
+def mb_km(km):
     master_km = km[km["version"].str.find("8.3.4") >= 0]["自动驾驶里程"]
     master_sum = master_km.str[:-2].astype(float).sum()
     rb_km = km[(km["version"].str.find("8.4.40") >= 0) | (km["version"].str.find("8.4.37") >= 0)]["自动驾驶里程"]
@@ -48,42 +50,37 @@ def mb_km():
     return master_sum, rb_sum
 
 
-
-
 def version_num():
-    #f = open("2.csv", "w")
+    # f = open("2.csv", "w")
     vr = {}
-    versi= set(data["版本"])     
-    version_list = sorted(versi,key=lambda x:int(x.replace(".",""))) 
+    versi = set(data["版本"])
+    version_list = sorted(versi, key=lambda x: int(x.replace(".", "")))
     vr["ver_list"] = version_list
     for i in set(data["事件类型"]):
-            ex = data[data["事件类型"]==i]["版本"]
-            a = ex.to_list()
-            for ver in version_list:
-                if ver in a:
-                    try:
-                        vr[i].append([ver,len(ex)])
-                    except Exception as e:
-                        vr[i] = []
-                        vr[i].append([ver,len(ex)])
-                else:
-                    try:
-                        vr[i].append([ver,0])
-                    except Exception as e:
-                        vr[i] = []
-                        vr[i].append([ver,0])
-            # for ip, count in j:
-            #     if ip in ip_sums:
-            #         ip_sums[ip] += count
-            #     else:
-            #         ip_sums[ip] = count
-            # print(ip_sums)
-    #         f.write("%s,%s\n"%(i,str(j).replace('[','').replace(']','').replace('\'','')))
-    #     f.write("\n\n")
-    # f.close()
+        ex = data[data["事件类型"] == i]
+        a = ex["版本"].to_list()
+        for ver in version_list:
+            num = ex[ex["版本"] == ver]
+            if ver in a:
+                try:
+                    vr[i].append([ver, len(num)])
+                except Exception as e:
+                    vr[i] = []
+                    vr[i].append([ver, len(num)])
+            else:
+                try:
+                    vr[i].append([ver, 0])
+                except Exception as e:
+                    vr[i] = []
+                    vr[i].append([ver, 0])
+    for i, j in vr.items():
+        version = list(map(lambda x: x[0], j))
+        version_num = list(map(lambda x:x[1],j))
+        f.write(f"{version}")
     return vr
 
-def version_master(kk):
+
+def version_master(kk, f):
     for m, t in enumerate([master, rb]):
         dt = {}
         f.write("事件,总数,百公里触发次数,高速全部,高速有回传,城市全部,城市有回传\n")
@@ -120,38 +117,42 @@ def version_master(kk):
                 f.write(f"{i},0,0,0,0,0,0\n")
         f.write(",自动驾驶里程,%d\n\n" % kk[m])
 
-def rende(data:dict):  
-    line = Line(init_opts=opts.InitOpts(width="2500px",height="1700px"))
+
+def rende(data: dict):
+    line = Line()
     # 添加X轴和Y轴的数据  
     line.add_xaxis(data["ver_list"])
-    for i,j in data.items():
-        num = list(map(lambda x:x[1],j))
-        line.add_yaxis(f"{i}",num,linestyle_opts=opts.LineStyleOpts(width=3),label_opts=opts.LabelOpts(is_show=False))
+    for i, j in data.items():
+        if i == "ver_list":
+            continue
+        num = list(map(lambda x: x[1], j))
+        line.add_yaxis(f"{i}", num, linestyle_opts=opts.LineStyleOpts(width=3),
+                       label_opts=opts.LabelOpts(is_show=False))
 
-    line.set_global_opts(title_opts=opts.TitleOpts(title="版本触发次数",pos_left="center"),legend_opts=opts.LegendOpts(orient='vertical', pos_right='center',pos_top='75%'),
-                          xaxis_opts=opts.AxisOpts(
-                            splitline_opts=opts.SplitLineOpts(is_show=False),
-                            axislabel_opts=opts.LabelOpts(interval=0, rotate=-90)
-                        ))
-    g = Grid()
-    g.add(line,grid_opts=opts.GridOpts(pos_bottom="40%"))
+    line.set_global_opts(title_opts=opts.TitleOpts(title="版本触发次数", pos_left="center"),
+                         legend_opts=opts.LegendOpts(orient='vertical', pos_right='center', pos_top='75%'),
+                         xaxis_opts=opts.AxisOpts(
+                             splitline_opts=opts.SplitLineOpts(is_show=False),
+                             axislabel_opts=opts.LabelOpts(interval=0, rotate=-90)
+                         ))
+    g = Grid(init_opts=opts.InitOpts(theme=ThemeType.DARK))
+    g.add(line, grid_opts=opts.GridOpts(pos_bottom="40%"))
     # 渲染图表为HTML文件  
     g.render()
 
 
 if __name__ == "__main__":
-    file = "D:\GPT浏览器下载\通用打点列表--最多显示1万条.xlsx"
+    file = "/Users/v_huangmin05/Downloads/0513-0519.xlsx"
     data = pd.read_excel(file, header=1)
 
     # km = pd.read_excel(file, sheet_name="里程", header=1)
-
     # km2 = int(km[km["car_id"] == " 合计"]["自动驾驶里程"].tolist()[0].replace(",", "")[:-4])
     # f = open("1.csv", "w")
-    master = data[data["版本"].str.find("8.3.4") >= 0]
-    rb = data[(data["版本"].str.find("8.4.40") >= 0) | (data["版本"].str.find("8.4.37") >= 0)]
+    # master = data[data["版本"].str.find("8.3.4") >= 0]
+    # rb = data[(data["版本"].str.find("8.4.40") >= 0) | (data["版本"].str.find("8.4.37") >= 0)]
     # summary_num()
     # kk = mb_km()
     # version_master(kk)
-    vr = version_num()
-    rende(vr)
+    vre = version_num()
+    rende(vre)
     # f.close()
