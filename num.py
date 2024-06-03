@@ -112,7 +112,7 @@ def version_num(f,data):
         version = list(map(lambda x: x[0], j))
         version_num = list(map(lambda x:x[1],j))
         if a == 0:
-            f.write(f",{','.join(version)}\n")
+            f.write(f"事件\版本,{','.join(version)}\n")
             a+=1
         f.write(f"{i},{','.join(map(str,version_num))}\n")
     return vr
@@ -193,7 +193,7 @@ def rende(data: dict,save_name):
                              splitline_opts=opts.SplitLineOpts(is_show=False),
                              axislabel_opts=opts.LabelOpts(interval=0, rotate=-90)
                          ))
-    g = Grid(init_opts=opts.InitOpts(theme=ThemeType.DARK))
+    g = Grid(init_opts=opts.InitOpts(theme=ThemeType.CHALK))
     g.add(line, grid_opts=opts.GridOpts(pos_bottom="40%"))
     # 渲染图表为HTML文件  
     g.render(save_name)
@@ -220,13 +220,7 @@ if __name__ == "__main__":
     file = "D:\work\myrepo\\0520-0526.xlsx"
     save_file = file.split("\\")[-1]
     params = public_params(file)
-    
-    # km = pd.read_excel(file, sheet_name="里程", header=1)
-    # km2 = int(km[km["car_id"] == " 合计"]["自动驾驶里程"].tolist()[0].replace(",", "")[:-4])
-    # f = open("1.csv", "w")
-    # master = data[data["版本"].str.find("8.3.4") >= 0]
-    # rb = data[(data["版本"].str.find("8.4.40") >= 0) | (data["版本"].str.find("8.4.37") >= 0)]
-    f = open(save_file, "w")
+    f = open(save_file.replace("xlsx","csv"), "w")
     # summary_num(params["km2"],f,params["data"])
     # kk = mb_km(params["km"])
     # version_master(kk,f,params)
