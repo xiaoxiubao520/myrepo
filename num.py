@@ -1,22 +1,24 @@
+import argparse
+import functools
 import pandas as pd
 from pyecharts.charts import Line, Grid
 from pyecharts import options as opts
 from pyecharts.globals import ThemeType
 
 
-def summary_num(km2, f,data):
+def summary_num(f, params):
     """
     计算每个事件类型的触发总数、百公里触发次数、高速场景下触发数量、高速场景下带有回传信息的触发数量、
     城市场景下触发数量、城市场景下带有回传信息的触发数量，并将结果写入文件。
     
     Args:
-        km2 (int): 自动驾驶总里程数（单位：公里）
         f (TextIOWrapper): 文件对象，用于写入结果
     
     Returns:
         None
     """
     dt = {}
+    data = params["data"]
     for i in set(data["事件类型"]):
         da = data[data["事件类型"] == i]
         sm = len(da)
@@ -25,30 +27,20 @@ def summary_num(km2, f,data):
         city_yes = len(city[city["realtime_if_link"] == "issueFinder"])
         speed = da[da["驾驶域"] == "高速"]
         speed_yes = len(speed[speed["realtime_if_link"] == "issueFinder"])
-        km3 = round(sm / km2 * 100, 3)
+        km3 = round(sm / params["km2"] * 100, 3)
 
         dt.update({
             i: [sm, km3, len(speed), speed_yes, len(city), city_yes]
         })
 
-    f.write("事件,总数,百公里触发次数,高速全部,高速有回传,城市全部,城市有回传\n")
-    for i in ["CIPV_VEH_LOST",
-              "CIPV_POS_EXCEPTION_VEH",
-              "CIPV_POS_SHIFT_DIFF_VEH",
-              "CIPV_THETA_DIFF_VEH",
-              "LARGE_VEHICLE_POS_EXCEPTION",
-              "LARGE_VEHICLE_POS_SHIFT_DIFF",
-              "LARGE_VEHICLE_THETA_DIFF",
-              "NarrowCIPV", "RadarAssignFusionMining",
-              "RadarTrackFusionMining",
-              "UnderlyingVelocityFusionMining",
-              "VRUVelocityFusionMining",
-              "RadarPositionFusionMining"]:
-        if i in dt.keys():
-            f.write("%s,%s\n" % (i, str(dt[i]).strip("[]")))
+    f.write("事件,触发器,总数,百公里触发次数,高速全部,高速有回传,城市全部,城市有回传\n")
+    for i in params["exc"]:
+        exq = i[0]
+        if exq in dt.keys():
+            f.write("%s,%s,%s\n" % (exq, i[1], str(dt[exq]).strip("[]")))
         else:
             f.write(f"{i},0,0,0,0,0,0\n")
-    f.write(",自动驾驶里程,%d\n\n" % km2)
+    f.write(",自动驾驶里程,%d\n\n" % params["km2"])
 
 
 def mb_km(km):
@@ -71,7 +63,7 @@ def mb_km(km):
     return master_sum, rb_sum
 
 
-def version_num(f,data):
+def version_num(f, params):
     """
     生成版本数量统计信息，并写入到指定文件中。
     
@@ -85,6 +77,7 @@ def version_num(f,data):
     """
     # f = open("2.csv", "w")
     vr = {}
+    data = params["data"]
     versi = set(data["版本"])
     version_list = sorted(versi, key=lambda x: int(x.replace(".", "")))
     vr["ver_list"] = version_list
@@ -110,15 +103,18 @@ def version_num(f,data):
         if i == "ver_list":
             continue
         version = list(map(lambda x: x[0], j))
-        version_num = list(map(lambda x:x[1],j))
+        num_ver = list(map(lambda x: x[1], j))
         if a == 0:
-            f.write(f"事件\版本,{','.join(version)}\n")
-            a+=1
-        f.write(f"{i},{','.join(map(str,version_num))}\n")
+            f.write(f"版本\事件,{','.join(version)}\n")
+            a += 1
+        f.write(f"{i},{','.join(map(str, num_ver))}\n")
+    f.close()
+    df = pd.read_csv(f)
+    df.T.to_csv(f, header=False)
     return vr
 
 
-def version_master(kk, f,params):
+def version_master(f, params):
     """
     计算master & rb 版本各事件类型的触发频率和总数，并写入文件。
     
@@ -129,9 +125,10 @@ def version_master(kk, f,params):
     Returns:
         None
     """
+    kk = params["kk"]
     for m, t in enumerate([params["master"], params["rb"]]):
         dt = {}
-        f.write("事件,总数,百公里触发次数,高速全部,高速有回传,城市全部,城市有回传\n")
+        f.write("事件,触发器,总数,百公里触发次数,高速全部,高速有回传,城市全部,城市有回传\n")
         for i in set(t["事件类型"]):
             da = t[t["事件类型"] == i]
             sm = len(da)
@@ -146,27 +143,17 @@ def version_master(kk, f,params):
                 i: [sm, km3, len(speed), speed_yes, len(city), city_yes]
             })
 
-        for i in ["CIPV_VEH_LOST",
-                  "CIPV_POS_EXCEPTION_VEH",
-                  "CIPV_POS_SHIFT_DIFF_VEH",
-                  "CIPV_THETA_DIFF_VEH",
-                  "LARGE_VEHICLE_POS_EXCEPTION",
-                  "LARGE_VEHICLE_POS_SHIFT_DIFF",
-                  "LARGE_VEHICLE_THETA_DIFF",
-                  "NarrowCIPV",
-                  "RadarAssignFusionMining",
-                  "RadarTrackFusionMining",
-                  "UnderlyingVelocityFusionMining",
-                  "VRUVelocityFusionMining",
-                  "RadarPositionFusionMining"]:
-            if i in dt.keys():
-                f.write("%s,%s\n" % (i, str(dt[i]).strip("[]")))
+        for i in params["exc"]:
+            exq = i[0]
+            exc = i[1]
+            if exq in dt.keys():
+                f.write("%s,%s,%s\n" % (exq, exc, str(dt[exq]).strip("[]")))
             else:
-                f.write(f"{i},0,0,0,0,0,0\n")
+                f.write(f"{exq},{exc},0,0,0,0,0,0\n")
         f.write(",自动驾驶里程,%d\n\n" % kk[m])
 
 
-def rende(data: dict,save_name):
+def rende(data: dict, save_name):
     """
     根据传入的数据绘制版本触发次数的折线图，并将图表渲染为HTML文件。
     
@@ -193,10 +180,15 @@ def rende(data: dict,save_name):
                              splitline_opts=opts.SplitLineOpts(is_show=False),
                              axislabel_opts=opts.LabelOpts(interval=0, rotate=-90)
                          ))
-    g = Grid(init_opts=opts.InitOpts(theme=ThemeType.CHALK))
+    g = Grid()
     g.add(line, grid_opts=opts.GridOpts(pos_bottom="40%"))
     # 渲染图表为HTML文件  
     g.render(save_name)
+
+
+def write_data(func):
+    pass
+
 
 def public_params(file):
     """
@@ -205,25 +197,42 @@ def public_params(file):
     Returns:
         dict: 包含版本号、里程数和驾驶域的字典。
     """
+    exc = [["CIPV_VEH_LOST", "车辆CIPV丢失触发器"],
+           ["CIPV_POS_EXCEPTION_VEH", "车辆CIPV位置异常触发器"],
+           ["CIPV_POS_SHIFT_DIFF_VEH", "车辆CIPV位置速度自洽性异常触发器"],
+           ["CIPV_THETA_DIFF_VEH", "CIPV车辆朝向异常"],
+           ["LARGE_VEHICLE_POS_EXCEPTION", "大车位置异常触发器"],
+           ["LARGE_VEHICLE_POS_SHIFT_DIFF", "大车位置速度自洽性异常触发器"],
+           ["LARGE_VEHICLE_THETA_DIFF", "大车朝向异常触发器"],
+           ["NarrowCIPV", "narrow报出cipv"],
+           ["RadarAssignFusionMining", "视觉ID跳变(短暂丢失)"],
+           ["RadarTrackFusionMining", "视觉目标长时间丢失(CIPV"],
+           ["UnderlyingVelocityFusionMining", "视觉速度灵敏性(CIPV)"],
+           ["VRUVelocityFusionMining", "视觉速度朝向(行人)"],
+           ["RadarPositionFusionMining", "视觉位置跳动(CIPV)"]]
     data = pd.read_excel(file, header=1)
     km = pd.read_excel(file, sheet_name="里程", header=1)
     km2 = int(km[km["car_id"] == " 合计"]["自动驾驶里程"].tolist()[0].replace(",", "")[:-4])
     master = data[data["版本"].str.find("8.3.4") >= 0]
     rb = data[(data["版本"].str.find("8.4.40") >= 0) | (data["版本"].str.find("8.4.37") >= 0)]
+    kk = mb_km(km)
+    return {"exc": exc, "data": data, "km": km, "km2": km2, "master": master, "rb": rb, "kk": kk}
 
-    return {"data":data,"km":km, "km2": km2, "master": master, "rb": rb}
-def file_(v:int):
-    f = ["里程.csv","version.csv"]
-    return open(f[v],"w")
+
+def args_parse():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-f", "--file", help="input file")
+    parser.add_argument("-o", "--output", help="save file")
+    parser.add_argument("-v", "--vis", help="line map")
+    return parser.parse_args()
+
 
 if __name__ == "__main__":
-    file = "D:\work\myrepo\\0520-0526.xlsx"
-    save_file = file.split("\\")[-1]
+    file = "/Users/v_huangmin05/Downloads/通用打点数据_1717490210000.xlsx"
+    save_file = file.split("/")[-1]
     params = public_params(file)
-    f = open(save_file.replace("xlsx","csv"), "w")
-    # summary_num(params["km2"],f,params["data"])
-    # kk = mb_km(params["km"])
-    # version_master(kk,f,params)
-    vre = version_num(f,params["data"])
-    rende(vre,save_file.replace("xlsx","html"))
-    f.close()
+    f = open(save_file.replace("xlsx", "csv"), "w")
+    # summary_num(f, params)
+    # version_master(f, params)
+    vre = version_num(f, params)
+    rende(vre, save_file.replace("xlsx", "html"))

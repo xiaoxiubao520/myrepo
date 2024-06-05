@@ -1,48 +1,7 @@
 事件,总数,百公里触发次数,高速全部,高速有回传,城市全部,城市有回传
-CIPV_VEH_LOST,280, 0.212, 26, 12, 254, 76
-CIPV_POS_EXCEPTION_VEH,29, 0.022, 3, 3, 26, 11
-CIPV_POS_SHIFT_DIFF_VEH,338, 0.255, 97, 25, 241, 41
-CIPV_THETA_DIFF_VEH,4, 0.003, 0, 0, 4, 0
-LARGE_VEHICLE_POS_EXCEPTION,6, 0.005, 4, 2, 2, 1
-LARGE_VEHICLE_POS_SHIFT_DIFF,74, 0.056, 44, 12, 30, 9
-LARGE_VEHICLE_THETA_DIFF,1, 0.001, 0, 0, 1, 1
-NarrowCIPV,275, 0.208, 19, 5, 256, 51
-RadarAssignFusionMining,17, 0.013, 0, 0, 17, 4
-RadarTrackFusionMining,40, 0.03, 0, 0, 40, 13
-UnderlyingVelocityFusionMining,162, 0.122, 0, 0, 162, 30
-VRUVelocityFusionMining,112, 0.085, 0, 0, 112, 24
-RadarPositionFusionMining,21, 0.016, 0, 0, 21, 8
-,自动驾驶里程,132375
-
-事件,总数,百公里触发次数,高速全部,高速有回传,城市全部,城市有回传
-CIPV_VEH_LOST,181, 0.728, 22, 11, 159, 40
-CIPV_POS_EXCEPTION_VEH,23, 0.093, 3, 3, 20, 7
-CIPV_POS_SHIFT_DIFF_VEH,323, 1.3, 90, 24, 233, 38
-CIPV_THETA_DIFF_VEH,0,0,0,0,0,0
-LARGE_VEHICLE_POS_EXCEPTION,3, 0.012, 2, 1, 1, 0
-LARGE_VEHICLE_POS_SHIFT_DIFF,56, 0.225, 40, 11, 16, 4
-LARGE_VEHICLE_THETA_DIFF,1, 0.004, 0, 0, 1, 1
-NarrowCIPV,167, 0.672, 12, 5, 155, 36
-RadarAssignFusionMining,5, 0.02, 0, 0, 5, 1
-RadarTrackFusionMining,19, 0.076, 0, 0, 19, 3
-UnderlyingVelocityFusionMining,61, 0.245, 0, 0, 61, 13
-VRUVelocityFusionMining,38, 0.153, 0, 0, 38, 8
-RadarPositionFusionMining,6, 0.024, 0, 0, 6, 4
-,自动驾驶里程,24847
-
-事件,总数,百公里触发次数,高速全部,高速有回传,城市全部,城市有回传
-CIPV_VEH_LOST,85, 0.085, 3, 1, 82, 33
-CIPV_POS_EXCEPTION_VEH,6, 0.006, 0, 0, 6, 4
-CIPV_POS_SHIFT_DIFF_VEH,15, 0.015, 7, 1, 8, 3
-CIPV_THETA_DIFF_VEH,2, 0.002, 0, 0, 2, 0
-LARGE_VEHICLE_POS_EXCEPTION,1, 0.001, 1, 1, 0, 0
-LARGE_VEHICLE_POS_SHIFT_DIFF,16, 0.016, 3, 1, 13, 5
-LARGE_VEHICLE_THETA_DIFF,0,0,0,0,0,0
-NarrowCIPV,108, 0.108, 7, 0, 101, 15
-RadarAssignFusionMining,10, 0.01, 0, 0, 10, 3
-RadarTrackFusionMining,15, 0.015, 0, 0, 15, 9
-UnderlyingVelocityFusionMining,99, 0.099, 0, 0, 99, 17
-VRUVelocityFusionMining,62, 0.062, 0, 0, 62, 14
-RadarPositionFusionMining,15, 0.015, 0, 0, 15, 4
-,自动驾驶里程,99934
-
+RadarAssignFusionMining,27, 0.083, 0, 0, 27, 7
+RadarTrackFusionMining,43, 0.132, 0, 0, 43, 5
+UnderlyingVelocityFusionMining,184, 0.567, 0, 0, 184, 36
+VRUVelocityFusionMining,156, 0.481, 0, 0, 156, 31
+RadarPositionFusionMining,32, 0.099, 0, 0, 32, 8
+,自动驾驶里程,32453
