@@ -41,7 +41,7 @@ def summary_num(f, params):
         else:
             f.write(f"{i},0,0,0,0,0,0\n")
     f.write(",自动驾驶里程,%d\n\n" % params["km2"])
-
+    version_master(f, params)
 
 def mb_km(km):
     """
@@ -65,19 +65,23 @@ def mb_km(km):
 
 def version_num(f, params):
     """
-    生成版本数量统计信息，并写入到指定文件中。
-    
+    根据事件类型和版本信息，统计每个事件类型在各个版本中的数量，并写入到指定文件中。
+
     Args:
-        f: 文件对象，用于写入数据。
-        data: pandas DataFrame 类型，包含版本和事件类型等信息的数据集。
-    
+        f: 文件对象，用于写入统计结果。
+        params: 字典类型，包含以下字段：
+            - data: pandas DataFrame 类型，包含版本和事件类型等信息的数据集。
+            - exc: 列表类型，包含需要统计的事件类型名称。
+
     Returns:
         vr: 字典类型，包含版本列表和每个事件类型对应的版本数量信息。
-    
+            字典的键为事件类型名称，值为一个二维列表，每个子列表包含两个元素：版本号和该事件类型在该版本中的数量。
+
     """
     # f = open("2.csv", "w")
     vr = {}
     data = params["data"]
+    title = params["exc"]
     versi = set(data["版本"])
     version_list = sorted(versi, key=lambda x: int(x.replace(".", "")))
     vr["ver_list"] = version_list
@@ -99,18 +103,23 @@ def version_num(f, params):
                     vr[i] = []
                     vr[i].append([ver, 0])
     a = 0
-    for i, j in vr.items():
-        if i == "ver_list":
-            continue
-        version = list(map(lambda x: x[0], j))
-        num_ver = list(map(lambda x: x[1], j))
-        if a == 0:
-            f.write(f"版本\事件,{','.join(version)}\n")
-            a += 1
-        f.write(f"{i},{','.join(map(str, num_ver))}\n")
-    f.close()
-    df = pd.read_csv(f)
-    df.T.to_csv(f, header=False)
+    for i in title:
+        if i[0] in vr.keys():
+            version = list(map(lambda x: x[0], list(vr[i])))
+            num_ver = list(map(lambda x: x[1], list(vr[i])))
+            if a == 0:
+                f.write(f"版本\事件,{','.join(version)}\n")
+                a += 1
+            f.write(f"{i},{','.join(map(str, num_ver))}\n")
+    # for i, j in vr.items():
+    #     if i == "ver_list":
+    #         continue
+    #     version = list(map(lambda x: x[0], j))
+    #     num_ver = list(map(lambda x: x[1], j))
+    #     if a == 0:
+    #         f.write(f"版本\事件,{','.join(version)}\n")
+    #         a += 1
+    #     f.write(f"{i},{','.join(map(str, num_ver))}\n")
     return vr
 
 
@@ -228,11 +237,14 @@ def args_parse():
 
 
 if __name__ == "__main__":
-    file = "/Users/v_huangmin05/Downloads/通用打点数据_1717490210000.xlsx"
+    file = "/Users/v_huangmin05/Downloads/通用打点数据_1718077344200.xlsx"
     save_file = file.split("/")[-1]
-    params = public_params(file)
-    f = open(save_file.replace("xlsx", "csv"), "w")
-    # summary_num(f, params)
-    # version_master(f, params)
-    vre = version_num(f, params)
-    rende(vre, save_file.replace("xlsx", "html"))
+    with open(save_file.replace("xlsx", "csv"), "w") as f:
+        params = public_params(file)
+        summary_num(f, params)
+        # version_master(f, params)
+    with open(save_file.replace(".xlsx", "_version.csv"), "w") as f:
+        vre = version_num(f, params)
+        rende(vre, save_file.replace("xlsx", "html"))
+    df = pd.read_csv(f.name)
+    df.T.to_csv(save_file.replace(".xlsx", "_version.csv"), header=False)
