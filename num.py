@@ -43,6 +43,7 @@ def summary_num(f, params):
     f.write(",自动驾驶里程,%d\n\n" % params["km2"])
     version_master(f, params)
 
+
 def mb_km(km):
     """
     计算自动驾驶里程的总和。
@@ -83,7 +84,7 @@ def version_num(f, params):
     data = params["data"]
     title = params["exc"]
     versi = set(data["版本"])
-    version_list = sorted(versi, key=lambda x: int(x.replace(".", "")))
+    version_list = sorted(versi, key=lambda x: (int(x.split(".")[1]),int(x.split(".")[2]),int(x.split(".")[3])))
     vr["ver_list"] = version_list
     for i in set(data["事件类型"]):
         ex = data[data["事件类型"] == i]
@@ -104,13 +105,15 @@ def version_num(f, params):
                     vr[i].append([ver, 0])
     a = 0
     for i in title:
-        if i[0] in vr.keys():
-            version = list(map(lambda x: x[0], list(vr[i])))
-            num_ver = list(map(lambda x: x[1], list(vr[i])))
-            if a == 0:
-                f.write(f"版本\事件,{','.join(version)}\n")
-                a += 1
-            f.write(f"{i},{','.join(map(str, num_ver))}\n")
+        ex = i[0]
+        if not ex in vr.keys():
+            continue
+        version = list(map(lambda x: x[0], vr[ex]))
+        num_ver = list(map(lambda x: x[1], vr[ex]))
+        if a == 0 and version:
+            f.write(f"版本\事件,{','.join(version)}\n")
+            a += 1
+        f.write(f"{ex},{','.join(map(str, num_ver))}\n")
     # for i, j in vr.items():
     #     if i == "ver_list":
     #         continue
@@ -237,14 +240,16 @@ def args_parse():
 
 
 if __name__ == "__main__":
-    file = "/Users/v_huangmin05/Downloads/通用打点数据_1718077344200.xlsx"
-    save_file = file.split("/")[-1]
-    with open(save_file.replace("xlsx", "csv"), "w") as f:
-        params = public_params(file)
-        summary_num(f, params)
-        # version_master(f, params)
-    with open(save_file.replace(".xlsx", "_version.csv"), "w") as f:
+    # file = "/Users/v_huangmin05/Downloads/通用打点数据_1718077344200.xlsx"
+    file = "0520-0526.xlsx"
+    dir_name = file.split("/")[-1]
+    params = public_params(file)
+    # with open(save_file.replace("xlsx", "csv"), "w") as f:
+    #     summary_num(f, params)
+    #     version_master(f, params)
+    save_file = dir_name.replace(".xlsx", "_version.csv")
+    with open(save_file, "w") as f:
         vre = version_num(f, params)
-        rende(vre, save_file.replace("xlsx", "html"))
-    df = pd.read_csv(f.name)
-    df.T.to_csv(save_file.replace(".xlsx", "_version.csv"), header=False)
+        rende(vre, dir_name.replace("xlsx", "html"))
+    df = pd.read_csv(save_file)
+    df.T.to_csv(save_file, header=False)
