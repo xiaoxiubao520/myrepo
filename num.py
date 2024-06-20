@@ -1,9 +1,7 @@
 import argparse
-import functools
 import pandas as pd
 from pyecharts.charts import Line, Grid
 from pyecharts import options as opts
-from pyecharts.globals import ThemeType
 
 
 def summary_num(f, params):
@@ -44,7 +42,7 @@ def summary_num(f, params):
     version_master(f, params)
 
 
-def mb_km(km):
+def mb_km(km, carid):
     """
     计算自动驾驶里程的总和。
     
@@ -55,9 +53,12 @@ def mb_km(km):
         Tuple[float, float]: 一个元组，包含两个浮点数，分别表示master版本和rb版本的自动驾驶里程总和。
     
     """
-    master_km = km[km["version"].str.find("8.3.4") >= 0]["自动驾驶里程"]
+    master = km[km["version"].str.find("8.3.4") >= 0]
+    master_km = master[master["car_id"].isin(carid)]["自动驾驶里程"]
     master_sum = master_km.str[:-2].astype(float).sum()
-    rb_km = km[(km["version"].str.find("8.4.40") >= 0) | (km["version"].str.find("8.4.37") >= 0)]["自动驾驶里程"]
+    rb_km = km[(km["version"].str.find("8.4.40") >= 0) | (km["version"].str.find("8.4.37") >= 0) |
+               (km["version"].str.find("8.4.39") >= 0)]
+    rb_km = rb_km[rb_km["car_id"].isin(carid)]["自动驾驶里程"]
     rb_sum = rb_km.str[:-2].astype(float).sum()
     print("master:", int(master_sum))
     print("rb:", int(rb_sum))
@@ -84,7 +85,7 @@ def version_num(f, params):
     data = params["data"]
     title = params["exc"]
     versi = set(data["版本"])
-    version_list = sorted(versi, key=lambda x: (int(x.split(".")[1]),int(x.split(".")[2]),int(x.split(".")[3])))
+    version_list = sorted(versi, key=lambda x: (int(x.split(".")[1]), int(x.split(".")[2]), int(x.split(".")[3])))
     vr["ver_list"] = version_list
     for i in set(data["事件类型"]):
         ex = data[data["事件类型"] == i]
@@ -131,7 +132,6 @@ def version_master(f, params):
     计算master & rb 版本各事件类型的触发频率和总数，并写入文件。
     
     Args:
-        kk (list): 包含各驾驶域的里程数。
         f (TextIO): 文件对象，用于写入结果。
     
     Returns:
@@ -224,11 +224,53 @@ def public_params(file):
            ["RadarPositionFusionMining", "视觉位置跳动(CIPV)"]]
     data = pd.read_excel(file, header=1)
     km = pd.read_excel(file, sheet_name="里程", header=1)
-    km2 = int(km[km["car_id"] == " 合计"]["自动驾驶里程"].tolist()[0].replace(",", "")[:-4])
+    car_id = data["车号"].unique()
+    km2 = km[km["car_id"].isin(car_id)]["自动驾驶里程"].str[:-2].astype(float).sum()
+    # km2 = int(km[km["car_id"] == " 合计"]["自动驾驶里程"].tolist()[0].replace(",", "")[:-4])
     master = data[data["版本"].str.find("8.3.4") >= 0]
-    rb = data[(data["版本"].str.find("8.4.40") >= 0) | (data["版本"].str.find("8.4.37") >= 0)]
-    kk = mb_km(km)
-    return {"exc": exc, "data": data, "km": km, "km2": km2, "master": master, "rb": rb, "kk": kk}
+    rb = data[(data["版本"].str.find("8.4.40") >= 0) | (data["版本"].str.find("8.4.37") >= 0) |
+              (data["版本"].str.find("8.4.39") >= 0)]
+    kk = mb_km(km, car_id)
+    return {"exc": exc, "data": data, "km": km, "km2": km2, "master": master,
+            "rb": rb, "kk": kk, "car_id": car_id}
+
+
+def rb_km100(file, params):
+    """
+    根据输入的文件对象、参数字典，生成指定版本的自动驾驶里程统计信息，并写入到文件中。
+
+    Args:
+        file: 文件对象，用于写入统计信息。
+        params: 字典类型，包含以下字段：
+            - rb: pandas DataFrame 类型，包含版本和事件类型等信息的数据集。
+            - exc: 列表类型，包含需要统计的事件类型名称。
+            - km: pandas DataFrame 类型，包含版本和自动驾驶里程等信息的数据集。
+            - car_id: 列表类型，包含车辆ID。
+
+    Returns:
+        None
+
+    """
+    rb_data = params["rb"]
+    exc = params["exc"]
+    ver_list = [["1.4", "8.4.37"], ["1.5", "8.4.39"], ["2.0", "8.4.40"]]
+    km = params["km"]
+    car_id = params["car_id"]
+    for i in ver_list:
+        rb_new = rb_data[rb_data["版本"].str.find(i[1]) >= 0]
+        rb_km_data = km[km["version"].str.find(i[1]) >= 0]
+        rb_km = rb_km_data[rb_km_data["car_id"].isin(car_id)]["自动驾驶里程"]
+        rb_sum = rb_km.str[:-2].astype(float).sum()
+        file.write(f"{i[0]},{int(rb_sum)}\n")
+        print(f"{i[0]}:{int(rb_sum)}")
+        for z in exc:
+            ex = rb_new["事件类型"].unique()
+            if z[0] in ex:
+                rb_data_ex = rb_new[rb_new["事件类型"] == z[0]]
+                km100_num = round(len(rb_data_ex) / rb_sum * 100, 3)
+                file.write(f"{z[0]},{file.name},{km100_num}\n")
+            else:
+                file.write(f"{z[0]},{file.name},{0}\n")
 
 
 def args_parse():
@@ -241,15 +283,18 @@ def args_parse():
 
 if __name__ == "__main__":
     # file = "/Users/v_huangmin05/Downloads/通用打点数据_1718077344200.xlsx"
-    file = "0520-0526.xlsx"
+    file = "0415-0421.xlsx"
     dir_name = file.split("/")[-1]
     params = public_params(file)
+    with open(file.replace(".xlsx", "_1.csv"), "w") as f:
+        rb_km100(f, params)
+
     # with open(save_file.replace("xlsx", "csv"), "w") as f:
     #     summary_num(f, params)
     #     version_master(f, params)
-    save_file = dir_name.replace(".xlsx", "_version.csv")
-    with open(save_file, "w") as f:
-        vre = version_num(f, params)
-        rende(vre, dir_name.replace("xlsx", "html"))
-    df = pd.read_csv(save_file)
-    df.T.to_csv(save_file, header=False)
+    # save_file = dir_name.replace(".xlsx", "_version.csv")
+    # with open(save_file, "w") as f:
+    #     vre = version_num(f, params)
+    #     rende(vre, dir_name.replace("xlsx", "html"))
+    # df = pd.read_csv(save_file)
+    # df.T.to_csv(save_file, header=False)
