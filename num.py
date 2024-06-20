@@ -225,8 +225,8 @@ def public_params(file):
     data = pd.read_excel(file, header=1)
     km = pd.read_excel(file, sheet_name="里程", header=1)
     car_id = data["车号"].unique()
-    km2 = km[km["car_id"].isin(car_id)]["自动驾驶里程"].str[:-2].astype(float).sum()
-    # km2 = int(km[km["car_id"] == " 合计"]["自动驾驶里程"].tolist()[0].replace(",", "")[:-4])
+    # km2 = km[km["car_id"].isin(car_id)]["自动驾驶里程"].str[:-2].astype(float).sum()
+    km2 = int(km[km["car_id"] == " 合计"]["自动驾驶里程"].tolist()[0].replace(",", "")[:-4])
     master = data[data["版本"].str.find("8.3.4") >= 0]
     rb = data[(data["版本"].str.find("8.4.40") >= 0) | (data["版本"].str.find("8.4.37") >= 0) |
               (data["版本"].str.find("8.4.39") >= 0)]
