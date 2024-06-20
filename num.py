@@ -42,7 +42,7 @@ def summary_num(f, params):
     version_master(f, params)
 
 
-def mb_km(km, carid):
+def mb_km(km):
     """
     计算自动驾驶里程的总和。
     
@@ -54,11 +54,11 @@ def mb_km(km, carid):
     
     """
     master = km[km["version"].str.find("8.3.4") >= 0]
-    master_km = master[master["car_id"].isin(carid)]["自动驾驶里程"]
+    master_km = master["自动驾驶里程"]
     master_sum = master_km.str[:-2].astype(float).sum()
     rb_km = km[(km["version"].str.find("8.4.40") >= 0) | (km["version"].str.find("8.4.37") >= 0) |
                (km["version"].str.find("8.4.39") >= 0)]
-    rb_km = rb_km[rb_km["car_id"].isin(carid)]["自动驾驶里程"]
+    rb_km = rb_km["自动驾驶里程"]
     rb_sum = rb_km.str[:-2].astype(float).sum()
     print("master:", int(master_sum))
     print("rb:", int(rb_sum))
@@ -224,15 +224,15 @@ def public_params(file):
            ["RadarPositionFusionMining", "视觉位置跳动(CIPV)"]]
     data = pd.read_excel(file, header=1)
     km = pd.read_excel(file, sheet_name="里程", header=1)
-    car_id = data["车号"].unique()
+    # car_id = data["车号"].unique()
     # km2 = km[km["car_id"].isin(car_id)]["自动驾驶里程"].str[:-2].astype(float).sum()
     km2 = int(km[km["car_id"] == " 合计"]["自动驾驶里程"].tolist()[0].replace(",", "")[:-4])
     master = data[data["版本"].str.find("8.3.4") >= 0]
     rb = data[(data["版本"].str.find("8.4.40") >= 0) | (data["版本"].str.find("8.4.37") >= 0) |
               (data["版本"].str.find("8.4.39") >= 0)]
-    kk = mb_km(km, car_id)
+    kk = mb_km(km)
     return {"exc": exc, "data": data, "km": km, "km2": km2, "master": master,
-            "rb": rb, "kk": kk, "car_id": car_id}
+            "rb": rb, "kk": kk}
 
 
 def rb_km100(file, params):
@@ -255,11 +255,11 @@ def rb_km100(file, params):
     exc = params["exc"]
     ver_list = [["1.4", "8.4.37"], ["1.5", "8.4.39"], ["2.0", "8.4.40"]]
     km = params["km"]
-    car_id = params["car_id"]
+    # car_id = params["car_id"]
     for i in ver_list:
         rb_new = rb_data[rb_data["版本"].str.find(i[1]) >= 0]
         rb_km_data = km[km["version"].str.find(i[1]) >= 0]
-        rb_km = rb_km_data[rb_km_data["car_id"].isin(car_id)]["自动驾驶里程"]
+        rb_km = rb_km_data["自动驾驶里程"]
         rb_sum = rb_km.str[:-2].astype(float).sum()
         file.write(f"{i[0]},{int(rb_sum)}\n")
         print(f"{i[0]}:{int(rb_sum)}")
