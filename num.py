@@ -44,7 +44,7 @@ def summary_num(params):
             par.extend(dt[exq])
             sheet.append(par)
         else:
-            sheet.append([i[0],i[1], 0, 0, 0, 0, 0, 0])
+            sheet.append([i[0], i[1], 0, 0, 0, 0, 0, 0])
     sheet.append(["", "自动驾驶里程", params["km2"]])
     sheet.append(["\n\n"])
     version_master(params)
@@ -181,7 +181,7 @@ def version_master(params):
             else:
                 sheet.append([exq, exc, 0, 0, 0, 0, 0, 0])
                 # f.write(f"{exq},{exc},0,0,0,0,0,0\n")
-        sheet.append(["", "自动驾驶里程（km）",int(kk[m])])
+        sheet.append(["", "自动驾驶里程（km）", int(kk[m])])
         sheet.append(["\n\n"])
 
 
@@ -262,20 +262,21 @@ def public_params(file):
 
 def rb_km100(params):
     """
-    根据输入的文件对象、参数字典，生成指定版本的自动驾驶里程（km）统计信息，并写入到文件中。
+    根据给定的参数，统计特定版本的自动驾驶里程和特定事件类型在每百公里出现的次数，并将结果添加到给定的sheet中。
 
     Args:
-        file: 文件对象，用于写入统计信息。
-        params: 字典类型，包含以下字段：
-            - rb: pandas DataFrame 类型，包含版本和事件类型等信息的数据集。
-            - exc: 列表类型，包含需要统计的事件类型名称。
-            - km: pandas DataFrame 类型，包含版本和自动驾驶里程（km）等信息的数据集。
-            - car_id: 列表类型，包含车辆ID。
+        params (dict): 包含以下键值的字典：
+            - sheet (list): 需要添加结果的二维列表。
+            - rb (pandas.DataFrame): 包含路测数据的DataFrame，其中需包含“版本”列。
+            - exc (list): 包含需要统计的事件类型列表，列表中每个元素为元组，元组的第一个元素为事件类型。
+            - km (pandas.DataFrame): 包含自动驾驶里程的DataFrame，其中需包含“version”列和“自动驾驶里程（km）”列。
+            - # car_id (可选，未使用): 车辆ID，本函数中未使用。
 
     Returns:
-        None
+        None: 该函数将结果直接添加到给定的sheet中，不返回任何值。
 
     """
+
     sheet = params["sheet"][2]
     rb_data = params["rb"]
     exc = params["exc"]
@@ -300,6 +301,7 @@ def rb_km100(params):
                 sheet.append([z[0], 0, 0])
         sheet.append(["\n\n"])
 
+
 def args_parse():
     parser = argparse.ArgumentParser()
     parser.add_argument("-f", "--file", help="input file")
@@ -308,21 +310,24 @@ def args_parse():
     return parser.parse_args()
 
 
-def save(save_file,params):
+def save(save_file, params):
     summary_num(params)
     version_num(params)
     rb_km100(params)
     params["wb"].save(save_file)
-    df = pd.read_excel(save_file,sheet_name="version_num")
+    df = pd.read_excel(save_file, sheet_name="version_num")
     df = df.T
-    with pd.ExcelWriter(save_file, engine='openpyxl', mode='a',if_sheet_exists="replace") as wri:
+    with pd.ExcelWriter(save_file, engine='openpyxl', mode='a', if_sheet_exists="replace") as wri:
         df.to_excel(wri, sheet_name="version_num", header=False)
 
 
 if __name__ == "__main__":
-    # for i in ["0415-0421", "0422-0428", "0429-0505", "0506-0512", "0513-0519", "0520-0526", "0527-0602", "0603-0609"]:
-    #     file = f"/Users/v_huangmin05/Downloads/rb基准测试{i}.xlsx"
-    file = f"/Users/v_huangmin05/Downloads/通用打点数据_1719203863028.xlsx"
-    params = public_params(file)
-    save_file = "1_" + file.split("/")[-1]
-    save(save_file,params)
+    with open("/Users/v_huangmin05/Downloads/1.txt", "r") as f:
+        for i in f:
+            file = "/Users/v_huangmin05/Downloads/" + i.strip()
+            # file = f"/Users/v_huangmin05/Downloads/通用打点数据_1719217431301.xlsx"
+            params = public_params(file)
+            save_file = "1_" + file.split("/")[-1]
+            save(save_file, params)
+            print()
+            time.sleep(1)
