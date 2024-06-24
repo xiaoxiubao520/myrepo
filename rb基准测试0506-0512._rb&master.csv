@@ -1,0 +1,48 @@
+事件,触发器,总数,百公里触发次数,高速全部,高速有回传,城市全部,城市有回传
+CIPV_VEH_LOST,车辆CIPV丢失触发器,622, 6.608, 0, 0, 0, 0
+CIPV_POS_EXCEPTION_VEH,车辆CIPV位置异常触发器,3, 0.032, 0, 0, 0, 0
+CIPV_POS_SHIFT_DIFF_VEH,车辆CIPV位置速度自洽性异常触发器,7, 0.074, 0, 0, 0, 0
+['CIPV_THETA_DIFF_VEH', 'CIPV车辆朝向异常'],0,0,0,0,0,0
+LARGE_VEHICLE_POS_EXCEPTION,大车位置异常触发器,1, 0.011, 0, 0, 0, 0
+LARGE_VEHICLE_POS_SHIFT_DIFF,大车位置速度自洽性异常触发器,31, 0.329, 0, 0, 0, 0
+LARGE_VEHICLE_THETA_DIFF,大车朝向异常触发器,1, 0.011, 0, 0, 0, 0
+NarrowCIPV,narrow报出cipv,276, 2.932, 0, 0, 0, 0
+RadarAssignFusionMining,视觉ID跳变(短暂丢失),2, 0.021, 0, 0, 0, 0
+RadarTrackFusionMining,视觉目标长时间丢失(CIPV,4, 0.042, 0, 0, 0, 0
+UnderlyingVelocityFusionMining,视觉速度灵敏性(CIPV),23, 0.244, 0, 0, 0, 0
+VRUVelocityFusionMining,视觉速度朝向(行人),38, 0.404, 0, 0, 0, 0
+RadarPositionFusionMining,视觉位置跳动(CIPV),16, 0.17, 0, 0, 0, 0
+,自动驾驶里程,9413
+
+事件,触发器,总数,百公里触发次数,高速全部,高速有回传,城市全部,城市有回传
+CIPV_VEH_LOST,车辆CIPV丢失触发器,2, 1.637, 0, 0, 0, 0
+CIPV_POS_EXCEPTION_VEH,车辆CIPV位置异常触发器,1, 0.819, 0, 0, 0, 0
+CIPV_POS_SHIFT_DIFF_VEH,车辆CIPV位置速度自洽性异常触发器,1, 0.819, 0, 0, 0, 0
+CIPV_THETA_DIFF_VEH,CIPV车辆朝向异常,0,0,0,0,0,0
+LARGE_VEHICLE_POS_EXCEPTION,大车位置异常触发器,0,0,0,0,0,0
+LARGE_VEHICLE_POS_SHIFT_DIFF,大车位置速度自洽性异常触发器,1, 0.819, 0, 0, 0, 0
+LARGE_VEHICLE_THETA_DIFF,大车朝向异常触发器,0,0,0,0,0,0
+NarrowCIPV,narrow报出cipv,2, 1.637, 0, 0, 0, 0
+RadarAssignFusionMining,视觉ID跳变(短暂丢失),0,0,0,0,0,0
+RadarTrackFusionMining,视觉目标长时间丢失(CIPV,0,0,0,0,0,0
+UnderlyingVelocityFusionMining,视觉速度灵敏性(CIPV),0,0,0,0,0,0
+VRUVelocityFusionMining,视觉速度朝向(行人),0,0,0,0,0,0
+RadarPositionFusionMining,视觉位置跳动(CIPV),1, 0.819, 0, 0, 0, 0
+,自动驾驶里程（km）,122
+
+事件,触发器,总数,百公里触发次数,高速全部,高速有回传,城市全部,城市有回传
+CIPV_VEH_LOST,车辆CIPV丢失触发器,620, 6.673, 0, 0, 0, 0
+CIPV_POS_EXCEPTION_VEH,车辆CIPV位置异常触发器,2, 0.022, 0, 0, 0, 0
+CIPV_POS_SHIFT_DIFF_VEH,车辆CIPV位置速度自洽性异常触发器,6, 0.065, 0, 0, 0, 0
+CIPV_THETA_DIFF_VEH,CIPV车辆朝向异常,0,0,0,0,0,0
+LARGE_VEHICLE_POS_EXCEPTION,大车位置异常触发器,1, 0.011, 0, 0, 0, 0
+LARGE_VEHICLE_POS_SHIFT_DIFF,大车位置速度自洽性异常触发器,30, 0.323, 0, 0, 0, 0
+LARGE_VEHICLE_THETA_DIFF,大车朝向异常触发器,1, 0.011, 0, 0, 0, 0
+NarrowCIPV,narrow报出cipv,274, 2.949, 0, 0, 0, 0
+RadarAssignFusionMining,视觉ID跳变(短暂丢失),2, 0.022, 0, 0, 0, 0
+RadarTrackFusionMining,视觉目标长时间丢失(CIPV,4, 0.043, 0, 0, 0, 0
+UnderlyingVelocityFusionMining,视觉速度灵敏性(CIPV),23, 0.248, 0, 0, 0, 0
+VRUVelocityFusionMining,视觉速度朝向(行人),38, 0.409, 0, 0, 0, 0
+RadarPositionFusionMining,视觉位置跳动(CIPV),15, 0.161, 0, 0, 0, 0
+,自动驾驶里程（km）,9291
+

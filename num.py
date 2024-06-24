@@ -1,4 +1,6 @@
 import argparse
+import time
+import openpyxl
 import pandas as pd
 from pyecharts.charts import Line, Grid
 from pyecharts import options as opts
@@ -20,11 +22,11 @@ def summary_num(f, params):
     for i in set(data["事件类型"]):
         da = data[data["事件类型"] == i]
         sm = len(da)
-        city = da[da["驾驶域"] == "城市"]
+        city = da[da["驾驶域"] == "urban"]
 
-        city_yes = len(city[city["realtime_if_link"] == "issueFinder"])
-        speed = da[da["驾驶域"] == "高速"]
-        speed_yes = len(speed[speed["realtime_if_link"] == "issueFinder"])
+        city_yes = len(city[city["实时回传链接"] == "issueFinder"])
+        speed = da[da["驾驶域"] == "highway"]
+        speed_yes = len(speed[speed["实时回传链接"] == "issueFinder"])
         km3 = round(sm / params["km2"] * 100, 3)
 
         dt.update({
@@ -54,12 +56,12 @@ def mb_km(km):
     
     """
     master = km[km["version"].str.find("8.3.4") >= 0]
-    master_km = master["自动驾驶里程"]
-    master_sum = master_km.str[:-2].astype(float).sum()
+    master_km = master["自动驾驶里程（km）"]
+    master_sum = master_km.astype(float).sum()
     rb_km = km[(km["version"].str.find("8.4.40") >= 0) | (km["version"].str.find("8.4.37") >= 0) |
                (km["version"].str.find("8.4.39") >= 0)]
-    rb_km = rb_km["自动驾驶里程"]
-    rb_sum = rb_km.str[:-2].astype(float).sum()
+    rb_km = rb_km["自动驾驶里程（km）"]
+    rb_sum = rb_km.astype(float).sum()
     print("master:", int(master_sum))
     print("rb:", int(rb_sum))
     return master_sum, rb_sum
@@ -104,26 +106,22 @@ def version_num(f, params):
                 except Exception as e:
                     vr[i] = []
                     vr[i].append([ver, 0])
+    c = len(vr["CIPV_VEH_LOST"])
     a = 0
+    zero = ["0" for m in range(0,c)]
     for i in title:
         ex = i[0]
-        if not ex in vr.keys():
-            continue
-        version = list(map(lambda x: x[0], vr[ex]))
-        num_ver = list(map(lambda x: x[1], vr[ex]))
-        if a == 0 and version:
-            f.write(f"版本\事件,{','.join(version)}\n")
-            a += 1
-        f.write(f"{ex},{','.join(map(str, num_ver))}\n")
-    # for i, j in vr.items():
-    #     if i == "ver_list":
-    #         continue
-    #     version = list(map(lambda x: x[0], j))
-    #     num_ver = list(map(lambda x: x[1], j))
-    #     if a == 0:
-    #         f.write(f"版本\事件,{','.join(version)}\n")
-    #         a += 1
-    #     f.write(f"{i},{','.join(map(str, num_ver))}\n")
+        if ex in vr.keys():
+
+            version = list(map(lambda x: x[0], vr[ex]))
+            num_ver = list(map(lambda x: x[1], vr[ex]))
+            if a == 0 and version:
+                f.write(f"版本\事件,{','.join(version)}\n")
+                a += 1
+            f.write(f"{ex},{','.join(map(str, num_ver))}\n")
+        else :
+
+            f.write(f"{ex},{','.join(zero)}\n")
     return vr
 
 
@@ -144,11 +142,11 @@ def version_master(f, params):
         for i in set(t["事件类型"]):
             da = t[t["事件类型"] == i]
             sm = len(da)
-            city = da[da["驾驶域"] == "城市"]
+            city = da[da["驾驶域"] == "urban"]
 
-            city_yes = len(city[city["realtime_if_link"] == "issueFinder"])
-            speed = da[da["驾驶域"] == "高速"]
-            speed_yes = len(speed[speed["realtime_if_link"] == "issueFinder"])
+            city_yes = len(city[city["实时回传链接"] == "issueFinder"])
+            speed = da[da["驾驶域"] == "highway"]
+            speed_yes = len(speed[speed["实时回传链接"] == "issueFinder"])
             km3 = round(sm / kk[m] * 100, 3)
 
             dt.update({
@@ -162,7 +160,7 @@ def version_master(f, params):
                 f.write("%s,%s,%s\n" % (exq, exc, str(dt[exq]).strip("[]")))
             else:
                 f.write(f"{exq},{exc},0,0,0,0,0,0\n")
-        f.write(",自动驾驶里程,%d\n\n" % kk[m])
+        f.write(",自动驾驶里程（km）,%d\n\n" % kk[m])
 
 
 def rende(data: dict, save_name):
@@ -177,12 +175,14 @@ def rende(data: dict, save_name):
     
     """
     line = Line()
-    # 添加X轴和Y轴的数据  
-    line.add_xaxis(data["ver_list"])
+    # 添加X轴和Y轴的数据
+    ver_list = list(filter(lambda x: x.find("8.4.40") >= 0, data["ver_list"]))
+    line.add_xaxis(ver_list)
     for i, j in data.items():
         if i == "ver_list":
             continue
-        num = list(map(lambda x: x[1], j))
+        num = list(filter(lambda x: x[0].find("8.4.40") >= 0, j))
+        num = list(map(lambda x: x[1], num))
         line.add_yaxis(f"{i}", num, linestyle_opts=opts.LineStyleOpts(width=3),
                        label_opts=opts.LabelOpts(is_show=False))
 
@@ -223,10 +223,9 @@ def public_params(file):
            ["VRUVelocityFusionMining", "视觉速度朝向(行人)"],
            ["RadarPositionFusionMining", "视觉位置跳动(CIPV)"]]
     data = pd.read_excel(file, header=1)
-    km = pd.read_excel(file, sheet_name="里程", header=1)
-    # car_id = data["车号"].unique()
-    # km2 = km[km["car_id"].isin(car_id)]["自动驾驶里程"].str[:-2].astype(float).sum()
-    km2 = int(km[km["car_id"] == " 合计"]["自动驾驶里程"].tolist()[0].replace(",", "")[:-4])
+    km = pd.read_excel(file, sheet_name="车辆里程信息", header=1)
+    km2 = int(km[km["车号"] == " 合计"]["自动驾驶里程（km）"].str.replace(",", "").astype(float).iloc[0])
+
     master = data[data["版本"].str.find("8.3.4") >= 0]
     rb = data[(data["版本"].str.find("8.4.40") >= 0) | (data["版本"].str.find("8.4.37") >= 0) |
               (data["版本"].str.find("8.4.39") >= 0)]
@@ -237,14 +236,14 @@ def public_params(file):
 
 def rb_km100(file, params):
     """
-    根据输入的文件对象、参数字典，生成指定版本的自动驾驶里程统计信息，并写入到文件中。
+    根据输入的文件对象、参数字典，生成指定版本的自动驾驶里程（km）统计信息，并写入到文件中。
 
     Args:
         file: 文件对象，用于写入统计信息。
         params: 字典类型，包含以下字段：
             - rb: pandas DataFrame 类型，包含版本和事件类型等信息的数据集。
             - exc: 列表类型，包含需要统计的事件类型名称。
-            - km: pandas DataFrame 类型，包含版本和自动驾驶里程等信息的数据集。
+            - km: pandas DataFrame 类型，包含版本和自动驾驶里程（km）等信息的数据集。
             - car_id: 列表类型，包含车辆ID。
 
     Returns:
@@ -259,18 +258,19 @@ def rb_km100(file, params):
     for i in ver_list:
         rb_new = rb_data[rb_data["版本"].str.find(i[1]) >= 0]
         rb_km_data = km[km["version"].str.find(i[1]) >= 0]
-        rb_km = rb_km_data["自动驾驶里程"]
-        rb_sum = rb_km.str[:-2].astype(float).sum()
+        rb_km = rb_km_data["自动驾驶里程（km）"]
+        rb_sum = rb_km.astype(float).sum()
         file.write(f"{i[0]},{int(rb_sum)}\n")
         print(f"{i[0]}:{int(rb_sum)}")
         for z in exc:
             ex = rb_new["事件类型"].unique()
             if z[0] in ex:
                 rb_data_ex = rb_new[rb_new["事件类型"] == z[0]]
-                km100_num = round(len(rb_data_ex) / rb_sum * 100, 3)
-                file.write(f"{z[0]},{file.name},{km100_num}\n")
+                ex_num = len(rb_data_ex)
+                km100_num = round(ex_num / rb_sum * 100, 3)
+                file.write(f"{z[0]},{ex_num},{km100_num}\n")
             else:
-                file.write(f"{z[0]},{file.name},{0}\n")
+                file.write(f"{z[0]},{0},{0}\n")
 
 
 def args_parse():
@@ -282,19 +282,20 @@ def args_parse():
 
 
 if __name__ == "__main__":
-    # file = "/Users/v_huangmin05/Downloads/通用打点数据_1718077344200.xlsx"
-    file = "0415-0421.xlsx"
-    dir_name = file.split("/")[-1]
-    params = public_params(file)
-    with open(file.replace(".xlsx", "_1.csv"), "w") as f:
-        rb_km100(f, params)
-
-    # with open(save_file.replace("xlsx", "csv"), "w") as f:
-    #     summary_num(f, params)
-    #     version_master(f, params)
-    # save_file = dir_name.replace(".xlsx", "_version.csv")
-    # with open(save_file, "w") as f:
-    #     vre = version_num(f, params)
-    #     rende(vre, dir_name.replace("xlsx", "html"))
-    # df = pd.read_csv(save_file)
-    # df.T.to_csv(save_file, header=False)
+    # for i in ["0415-0421", "0422-0428", "0429-0505", "0506-0512", "0513-0519", "0520-0526", "0527-0602", "0603-0609"]:
+    #     file = f"/Users/v_huangmin05/Downloads/rb基准测试{i}.xlsx"
+        file =  f"/Users/v_huangmin05/Downloads/通用打点数据_1719203863028.xlsx"
+        dir_name = file.split("/")[-1]
+        params = public_params(file)
+        save_file = dir_name.replace(".xlsx", ".csv")
+        with open(dir_name.replace(".xlsx", "_.csv"), "w") as f:
+            rb_km100(f, params)
+        with open(dir_name.replace("xlsx", "_rb&master.csv"), "w") as f:
+            summary_num(f, params)
+        with open(save_file, "w") as f:
+            vre = version_num(f, params)
+            rende(vre, dir_name.replace("xlsx", "html"))
+        df = pd.read_csv(save_file)
+        df.T.to_csv(save_file, header=False)
+        print("\n")
+        time.sleep(1)
