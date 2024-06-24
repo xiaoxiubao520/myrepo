@@ -1,24 +1,26 @@
+from openpyxl import Workbook
 import argparse
 import time
-import openpyxl
 import pandas as pd
 from pyecharts.charts import Line, Grid
 from pyecharts import options as opts
 
 
-def summary_num(f, params):
+def summary_num(params):
     """
     计算每个事件类型的触发总数、百公里触发次数、高速场景下触发数量、高速场景下带有回传信息的触发数量、
     城市场景下触发数量、城市场景下带有回传信息的触发数量，并将结果写入文件。
-    
+
     Args:
         f (TextIOWrapper): 文件对象，用于写入结果
-    
+
     Returns:
         None
     """
+    sheet = params["sheet"][1]
     dt = {}
     data = params["data"]
+    sheet.append(["汇总"])
     for i in set(data["事件类型"]):
         da = data[data["事件类型"] == i]
         sm = len(da)
@@ -33,27 +35,31 @@ def summary_num(f, params):
             i: [sm, km3, len(speed), speed_yes, len(city), city_yes]
         })
 
-    f.write("事件,触发器,总数,百公里触发次数,高速全部,高速有回传,城市全部,城市有回传\n")
+    sheet.append(["事件", "触发器", "总数", "百公里触发次数", "高速全部", "高速有回传", "城市全部", "城市有回传"])
+    x = []
     for i in params["exc"]:
         exq = i[0]
         if exq in dt.keys():
-            f.write("%s,%s,%s\n" % (exq, i[1], str(dt[exq]).strip("[]")))
+            par = [exq, i[1]]
+            par.extend(dt[exq])
+            sheet.append(par)
         else:
-            f.write(f"{i},0,0,0,0,0,0\n")
-    f.write(",自动驾驶里程,%d\n\n" % params["km2"])
-    version_master(f, params)
+            sheet.append([i[0],i[1], 0, 0, 0, 0, 0, 0])
+    sheet.append(["", "自动驾驶里程", params["km2"]])
+    sheet.append(["\n\n"])
+    version_master(params)
 
 
 def mb_km(km):
     """
     计算自动驾驶里程的总和。
-    
+
     Args:
         km (pd.DataFrame): 包含自动驾驶里程信息的DataFrame，其中需要包含"version"和"自动驾驶里程"两列。
-    
+
     Returns:
         Tuple[float, float]: 一个元组，包含两个浮点数，分别表示master版本和rb版本的自动驾驶里程总和。
-    
+
     """
     master = km[km["version"].str.find("8.3.4") >= 0]
     master_km = master["自动驾驶里程（km）"]
@@ -67,7 +73,7 @@ def mb_km(km):
     return master_sum, rb_sum
 
 
-def version_num(f, params):
+def version_num(params):
     """
     根据事件类型和版本信息，统计每个事件类型在各个版本中的数量，并写入到指定文件中。
 
@@ -83,6 +89,7 @@ def version_num(f, params):
 
     """
     # f = open("2.csv", "w")
+    sheet = params["sheet"][0]
     vr = {}
     data = params["data"]
     title = params["exc"]
@@ -108,7 +115,7 @@ def version_num(f, params):
                     vr[i].append([ver, 0])
     c = len(vr["CIPV_VEH_LOST"])
     a = 0
-    zero = ["0" for m in range(0,c)]
+    zero = ["0" for m in range(0, c)]
     for i in title:
         ex = i[0]
         if ex in vr.keys():
@@ -116,29 +123,39 @@ def version_num(f, params):
             version = list(map(lambda x: x[0], vr[ex]))
             num_ver = list(map(lambda x: x[1], vr[ex]))
             if a == 0 and version:
-                f.write(f"版本\事件,{','.join(version)}\n")
+                par = ["版本\事件"]
+                par.extend(version)
+                sheet.append(par)
                 a += 1
-            f.write(f"{ex},{','.join(map(str, num_ver))}\n")
-        else :
-
-            f.write(f"{ex},{','.join(zero)}\n")
+            par = [ex]
+            par.extend(num_ver)
+            sheet.append(par)
+        else:
+            par = [ex]
+            par.extend(zero)
+            sheet.append(par)
     return vr
 
 
-def version_master(f, params):
+def version_master(params):
     """
     计算master & rb 版本各事件类型的触发频率和总数，并写入文件。
-    
+
     Args:
         f (TextIO): 文件对象，用于写入结果。
-    
+
     Returns:
         None
     """
+    sheet = params["sheet"][1]
     kk = params["kk"]
     for m, t in enumerate([params["master"], params["rb"]]):
         dt = {}
-        f.write("事件,触发器,总数,百公里触发次数,高速全部,高速有回传,城市全部,城市有回传\n")
+        if m == 0:
+            sheet.append(["Master"])
+        else:
+            sheet.append(["RB"])
+        sheet.append(["事件", "触发器", "总数", "百公里触发次数", "高速全部", "高速有回传", "城市全部", "城市有回传"])
         for i in set(t["事件类型"]):
             da = t[t["事件类型"] == i]
             sm = len(da)
@@ -157,22 +174,27 @@ def version_master(f, params):
             exq = i[0]
             exc = i[1]
             if exq in dt.keys():
-                f.write("%s,%s,%s\n" % (exq, exc, str(dt[exq]).strip("[]")))
+                par = [exq, exc]
+                par.extend(dt[exq])
+                sheet.append(par)
+                # f.write("%s,%s,%s\n" % (exq, exc, str(dt[exq]).strip("[]")))
             else:
-                f.write(f"{exq},{exc},0,0,0,0,0,0\n")
-        f.write(",自动驾驶里程（km）,%d\n\n" % kk[m])
+                sheet.append([exq, exc, 0, 0, 0, 0, 0, 0])
+                # f.write(f"{exq},{exc},0,0,0,0,0,0\n")
+        sheet.append(["", "自动驾驶里程（km）",int(kk[m])])
+        sheet.append(["\n\n"])
 
 
 def rende(data: dict, save_name):
     """
     根据传入的数据绘制版本触发次数的折线图，并将图表渲染为HTML文件。
-    
+
     Args:
         data (dict): 包含版本号和对应触发次数的字典，其中"ver_list"键对应的值为版本号的列表，其余键对应的值为版本号对应触发次数的列表（每个列表中的元素为元组，第一个元素为版本号，第二个元素为触发次数）。
-    
+
     Returns:
         None: 该函数无返回值，将绘制的图表渲染为HTML文件。
-    
+
     """
     line = Line()
     # 添加X轴和Y轴的数据
@@ -194,7 +216,7 @@ def rende(data: dict, save_name):
                          ))
     g = Grid()
     g.add(line, grid_opts=opts.GridOpts(pos_bottom="40%"))
-    # 渲染图表为HTML文件  
+    # 渲染图表为HTML文件
     g.render(save_name)
 
 
@@ -205,7 +227,7 @@ def write_data(func):
 def public_params(file):
     """
     获取公共参数，包括版本号、里程数和驾驶域。
-    
+
     Returns:
         dict: 包含版本号、里程数和驾驶域的字典。
     """
@@ -225,16 +247,20 @@ def public_params(file):
     data = pd.read_excel(file, header=1)
     km = pd.read_excel(file, sheet_name="车辆里程信息", header=1)
     km2 = int(km[km["车号"] == " 合计"]["自动驾驶里程（km）"].str.replace(",", "").astype(float).iloc[0])
-
+    wb = Workbook()
+    wb.active.title = "summary"
+    sum_sheet = wb.active
+    version_num_sheet = wb.create_sheet("version_num")
+    rb_sheet = wb.create_sheet("rb")
     master = data[data["版本"].str.find("8.3.4") >= 0]
     rb = data[(data["版本"].str.find("8.4.40") >= 0) | (data["版本"].str.find("8.4.37") >= 0) |
               (data["版本"].str.find("8.4.39") >= 0)]
     kk = mb_km(km)
     return {"exc": exc, "data": data, "km": km, "km2": km2, "master": master,
-            "rb": rb, "kk": kk}
+            "rb": rb, "kk": kk, "sheet": [version_num_sheet, sum_sheet, rb_sheet], "wb": wb}
 
 
-def rb_km100(file, params):
+def rb_km100(params):
     """
     根据输入的文件对象、参数字典，生成指定版本的自动驾驶里程（km）统计信息，并写入到文件中。
 
@@ -250,6 +276,7 @@ def rb_km100(file, params):
         None
 
     """
+    sheet = params["sheet"][2]
     rb_data = params["rb"]
     exc = params["exc"]
     ver_list = [["1.4", "8.4.37"], ["1.5", "8.4.39"], ["2.0", "8.4.40"]]
@@ -260,7 +287,7 @@ def rb_km100(file, params):
         rb_km_data = km[km["version"].str.find(i[1]) >= 0]
         rb_km = rb_km_data["自动驾驶里程（km）"]
         rb_sum = rb_km.astype(float).sum()
-        file.write(f"{i[0]},{int(rb_sum)}\n")
+        sheet.append([i[0], int(rb_sum)])
         print(f"{i[0]}:{int(rb_sum)}")
         for z in exc:
             ex = rb_new["事件类型"].unique()
@@ -268,10 +295,10 @@ def rb_km100(file, params):
                 rb_data_ex = rb_new[rb_new["事件类型"] == z[0]]
                 ex_num = len(rb_data_ex)
                 km100_num = round(ex_num / rb_sum * 100, 3)
-                file.write(f"{z[0]},{ex_num},{km100_num}\n")
+                sheet.append([z[0], ex_num, km100_num])
             else:
-                file.write(f"{z[0]},{0},{0}\n")
-
+                sheet.append([z[0], 0, 0])
+        sheet.append(["\n\n"])
 
 def args_parse():
     parser = argparse.ArgumentParser()
@@ -281,21 +308,21 @@ def args_parse():
     return parser.parse_args()
 
 
+def save(save_file,params):
+    summary_num(params)
+    version_num(params)
+    rb_km100(params)
+    params["wb"].save(save_file)
+    df = pd.read_excel(save_file,sheet_name="version_num")
+    df = df.T
+    with pd.ExcelWriter(save_file, engine='openpyxl', mode='a',if_sheet_exists="replace") as wri:
+        df.to_excel(wri, sheet_name="version_num", header=False)
+
+
 if __name__ == "__main__":
     # for i in ["0415-0421", "0422-0428", "0429-0505", "0506-0512", "0513-0519", "0520-0526", "0527-0602", "0603-0609"]:
     #     file = f"/Users/v_huangmin05/Downloads/rb基准测试{i}.xlsx"
-        file =  f"/Users/v_huangmin05/Downloads/通用打点数据_1719203863028.xlsx"
-        dir_name = file.split("/")[-1]
-        params = public_params(file)
-        save_file = dir_name.replace(".xlsx", ".csv")
-        with open(dir_name.replace(".xlsx", "_.csv"), "w") as f:
-            rb_km100(f, params)
-        with open(dir_name.replace("xlsx", "_rb&master.csv"), "w") as f:
-            summary_num(f, params)
-        with open(save_file, "w") as f:
-            vre = version_num(f, params)
-            rende(vre, dir_name.replace("xlsx", "html"))
-        df = pd.read_csv(save_file)
-        df.T.to_csv(save_file, header=False)
-        print("\n")
-        time.sleep(1)
+    file = f"/Users/v_huangmin05/Downloads/通用打点数据_1719203863028.xlsx"
+    params = public_params(file)
+    save_file = "1_" + file.split("/")[-1]
+    save(save_file,params)
